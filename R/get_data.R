@@ -79,3 +79,4 @@ saveRDS(all_pages, file = 'all_pages.rds')
 
 #water watch url breakdown
 source('R/gwwatch_urls.R')
+gwwatch_urls <- analyze_urls(path_df = all_pages$all_raw$gwwatch)
