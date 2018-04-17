@@ -27,7 +27,9 @@ wq_seg_data <- google_analytics(viewId = wwatch_view, date_range = c(start = as.
                                 metrics = c("sessions", "users"), max = -1, 
                                 segments = wqwatch_segment, anti_sample = TRUE)
 
-
+#TODO: Is this segment excluding traffic that went to both WQWatch and WaterWatch?  
+#Total WQWatch traffic is insignificant compared to other watches though,
+#so not worrying about it for now
 no_wqwatch_path <- segment_element(name = "pagePath", operator = "BEGINS_WITH",
                                    type = "DIMENSION", expressions = "/wqwatch",
                                    caseSensitive = TRUE, not = TRUE)
