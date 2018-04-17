@@ -3,12 +3,12 @@ library(googleAuthR)
 library(dplyr)
 library(ggplot2)
 
-wwatch_view <- "18857756"
-gwwatch_view <- '77121234'
+config <- yaml::read_yaml('config.yaml')
+wwatch_view <- config$ga_views$wwatch
+gwwatch_view <- config$ga_views$gwwatch
 
-gar_auth_service('~/.vizlab/VIZLAB-a48f4107248c.json')
+gar_auth_service(config$ga_token)
 
-#TODO: keep segment creation here, functionalize other parts
 
 #create custom segment to get total metrics for water quality watch
 #Note that segments are defined at the session level - i.e. it will include
@@ -68,15 +68,5 @@ users_plot <- ggplot(data=all_watch_data,
   labs(x = "Date", y = "Users", color= "Watch") + 
   ggtitle('Monthly User Counts')
 ggsave(filename = 'users.png', plot = users_plot)
-
-#now get most popular pages for last year
-source('R/popular_pages.R')
-all_pages <- get_popular_pages(wq_segment = wqwatch_segment, 
-                               no_wq_segment = no_wqwatch_segment,
-                               wwatch_view = wwatch_view,
-                               gwwatch_view = gwwatch_view)
-saveRDS(all_pages, file = 'all_pages.rds')
-
-#water watch url breakdown
-source('R/gwwatch_urls.R')
-gwwatch_urls <- analyze_urls(path_df = all_pages$all_raw$gwwatch)
+saveRDS(object = wqwatch_segment, file = "wqwatch_segment.rds")
+saveRDS(object = no_wqwatch_segment, file = "no_wqwatch_segment.rds")
