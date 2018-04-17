@@ -41,4 +41,36 @@ analyze_wwatch_urls <- function(path_df) {
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Page group", y = "Summed unique page views") + scale_y_continuous(labels=scales::comma)
   ggsave(filename = "wwatch_paths.png")
+  
+}
+
+mutate_grep_query_param <- function(df, name, query_param) {
+  df_net <- df %>% mutate(network = ifelse(test = grepl(pattern = query_param,
+                                                        x = pagePath),
+                                           yes = name, no = network))
+  return(df_net)
+}
+
+#same for wqwatch too
+wwatch_networks <- function(path_df, ws, plot_file) {
+  #now network views
+  wwatch_networks <- gs_read_csv(gs_title('Watches url mapping'), ws = ws)
+  if(ws == "ww_networks"){
+    path_df <- path_df %>% filter(!grepl(pattern = "wqwatch", x = pagePath)) %>% mutate(network=NA)
+  } else if(ws == "wqw_networks") {
+    path_df <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath)) %>% 
+      mutate(network=ifelse(pagePath == "/wqwatch/", yes = "Temperature", no = NA))
+  }
+  
+  for(i in seq_along(wwatch_networks$name)) {
+    path_df <- mutate_grep_query_param(df = path_df, name = wwatch_networks$name[i],
+                                       query_param = wwatch_networks$query_param[i]) 
+  }
+  
+  networks_df <- path_df %>% group_by(network) %>% summarize(uniquePageViews = sum(uniquePageViews), 
+                                                             n = n()) %>% filter(!is.na(network))
+  wwatch_nets_plot <- ggplot(networks_df, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
+    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=scales::comma)
+  ggsave(filename = plot_file)
 }
