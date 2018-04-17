@@ -10,6 +10,10 @@ all_pages <- get_popular_pages(wq_segment = wqwatch_segment,
                                gwwatch_view = config$ga_views$gwwatch)
 saveRDS(all_pages, file = 'all_pages.rds')
 
-#water watch url breakdown
+#page group breakdowns
 source('R/gwwatch_urls.R')
 gwwatch_urls <- analyze_gww_urls(path_df = all_pages$all_raw$gwwatch)
+
+source('R/water_watch_urls.R')
+wqwatch_urls <- analyze_wqwatch_urls(all_pages$all_raw$wqwatch)
+
