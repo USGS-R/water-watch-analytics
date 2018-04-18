@@ -1,27 +1,27 @@
 library(dplyr)
 library(googlesheets)
 analyze_wqwatch_urls <- function(path_df){
-#only main map and state views for WQWatch
-path_df_no_string <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath, 
-                                              ignore.case = TRUE)) %>% 
-  mutate(path_no_query = tolower(gsub(x = pagePath, pattern = "\\?.*", 
-                                      replacement = ""))) %>% 
-  group_by(path_no_query) %>% summarize(uniquePageViews = sum(uniquePageViews)) %>% 
-  filter(uniquePageViews > 200) %>% arrange(desc(uniquePageViews))
-
+  #only main map and state views for WQWatch
+  path_df_no_string <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath, 
+                                                ignore.case = TRUE)) %>% 
+    mutate(path_no_query = tolower(gsub(x = pagePath, pattern = "\\?.*", 
+                                        replacement = ""))) %>% 
+    group_by(path_no_query) %>% summarize(uniquePageViews = sum(uniquePageViews)) %>% 
+    filter(uniquePageViews > 200) %>% arrange(desc(uniquePageViews))
+  
   #join on human names
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "WQW")
   #join on human readable names
   path_df_human_names <- left_join(path_df_no_string, plot_human_names, 
-                                     by = c(path_no_query = "pagePath minus query string"))
+                                   by = c(path_no_query = "pagePath minus query string"))
   wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageViews), y = uniquePageViews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique Page Views")
+    labs(x = "Page group", y = "Summed unique Page Views*")
   ggsave(filename = "wqwatch_paths.png")
-  return(path_df_human_names)
+  invisible(path_df_human_names)
 }
 
-analyze_wwatch_urls <- function(path_df) {
+analyze_wwatch_urls <- function(path_df, nwis_df) {
   #assign human names based on rules from Google sheet
   path_df_human <- path_df %>% filter(!grepl(pattern = "wqwatch", x = pagePath, 
                                              ignore.case = TRUE)) %>% 
@@ -36,17 +36,23 @@ analyze_wwatch_urls <- function(path_df) {
                              yes = "State/region flood and high flow maps", no = contents)) %>%
     mutate(contents = ifelse(test = grepl("m=real", x = pagePath) & grepl("r=..", x= pagePath),
                              yes = "State/region real time \nhistorical percentile maps", no = contents)) %>% 
-    group_by(contents) %>% summarize(uniquePageViews = sum(uniquePageViews))
-  wwatch_plot <- ggplot(path_df_human, aes(x = reorder(contents, -uniquePageViews), y = uniquePageViews))+
-    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique page views") + scale_y_continuous(labels=scales::comma)
-  ggsave(filename = "wwatch_paths.png")
+    group_by(contents) %>% summarize(uniquePageviews = sum(uniquePageViews))
   
+  #add in nwis site page traffic from waterwatch
+  nwis_df <- nwis_df %>% filter(source == "waterwatch.usgs.gov") 
+  nwis_row <- tibble(contents = "NWIS web site page \nreffered from WaterWatch*", uniquePageviews = sum(nwis_df$uniquePageviews))
+  path_df_human <- bind_rows(path_df_human, nwis_row)
+  
+  wwatch_plot <- ggplot(path_df_human, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
+    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
+  ggsave(filename = "wwatch_paths.png")
+  invisible(path_df_human)
 }
 
 mutate_grep_query_param <- function(df, name, query_param) {
   df_net <- df %>% mutate(network = ifelse(test = grepl(pattern = query_param,
-                                                        x = pagePath),
+                                                        x = pagePath, ignore.case = TRUE),
                                            yes = name, no = network))
   return(df_net)
 }
@@ -71,6 +77,8 @@ wwatch_networks <- function(path_df, ws, plot_file) {
                                                              n = n()) %>% filter(!is.na(network))
   wwatch_nets_plot <- ggplot(networks_df, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=scales::comma)
+    labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
   ggsave(filename = plot_file)
+  invisible(networks_df)
 }
+

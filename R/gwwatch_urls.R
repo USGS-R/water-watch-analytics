@@ -24,5 +24,27 @@ analyze_gww_urls <- function(path_df){
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Page group", y = "Unique Page Views")
   ggsave(filename = "gwwatch_path_asp.png")
-  return(path_df_asp_summary)
+  invisible(path_df_asp_summary)
+}
+
+gwwatch_networks <- function(path_df) {
+  gww_networks <- gs_read_csv(gs_title('Watches url mapping'), ws = "gww_networks")
+  path_df_ncd <- path_df %>% mutate(ncd = stringr::str_extract(pagePath, "ncd=[:alnum:]{0,6}"),
+                                    network = NA) %>% filter(!grepl(pattern = "awlsite", x = pagePath,
+                                                                    ignore.case = TRUE))
+  for(i in seq_along(gww_networks$name)) {
+    path_df_ncd <- mutate_grep_query_param(df = path_df_ncd, name = gww_networks$name[i],
+                                           query_param = gww_networks$query_param[i]) 
+  }
+  #assuming everything left with a non-empty ncd is a state/aquifer network
+  path_df_ncd_st_aq <- path_df_ncd %>% mutate(network = ifelse(is.na(network) & !is.na(ncd) & ncd != "ncd=", 
+                                                               yes = "State/local/aquifer",
+                                                               no = network)) %>% 
+    filter(!is.na(network
+    ))
+  gwwatch_nets_plot <- ggplot(path_df_ncd_st_aq, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
+    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
+  ggsave(filename = "gwwatch_networks.png")
+  invisible(path_df_ncd_st_aq)
 }

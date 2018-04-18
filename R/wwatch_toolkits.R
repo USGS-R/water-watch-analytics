@@ -19,5 +19,6 @@ toolkit_pages <- left_join(wwatch_pages, toolkit_query_strings,
   filter(!is.na(toolkit_name)) %>% arrange(desc(uniquePageViews))
 toolkit_plot <- ggplot(toolkit_pages, aes(x = reorder(toolkit_name, -uniquePageViews), y = uniquePageViews))+
   geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Toolkit name", y = "Summed unique page views\nof toolkit home page") + scale_y_continuous(labels=scales::comma)
+  labs(x = "Toolkit name", y = "Summed unique page views\nof toolkit home page") + scale_y_continuous(labels=scales::comma) +
+  ggtitle("Unique page views of toolkit main pages")
 ggsave(filename = "toolkits.png")

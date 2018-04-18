@@ -7,8 +7,7 @@ summarize_pages <- function(ga_df, base_url) {
 }
 
 
-get_popular_pages <- function(wq_segment, no_wq_segment, gwwatch_view, wwatch_view) {
-  date_range <- c(start = Sys.Date() - 365, end = Sys.Date())
+get_popular_pages <- function(wq_segment, no_wq_segment, gwwatch_view, wwatch_view, date_range) {
   wq_seg_data <- google_analytics(viewId = wwatch_view, date_range = date_range,
                                 dimensions = c("segment", "pagePath", "pageTitle", "date"),
                                 metrics = c("uniquePageViews"), max = -1, 
