@@ -27,14 +27,25 @@ saveRDS(all_watch_pages, file = 'all_pages.rds')
 
 #page group breakdowns
 source('R/gwwatch_urls.R')
-gwwatch_urls <- analyze_gww_urls(path_df = all_pages$all_raw$gwwatch)
+gwwatch_urls <- analyze_gww_urls(path_df = all_watch_pages$all_raw$gwwatch) %>% 
+  mutate(watch = "GroundwaterWatch")
 
 source('R/water_watch_urls.R')
-analyze_wwatch_urls(path_df = all_pages$all_raw$wwatch, nwis_df = all_pages$all_raw$nwis)
-analyze_wqwatch_urls(path_df = all_pages$all_raw$wqwatch)
+wwatch_urls <- analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
+                                   nwis_df = all_watch_pages$all_raw$nwis) %>% 
+  mutate(watch = "WaterWatch")
+wqwatch_urls <- analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch) %>% 
+  mutate(watch = "WaterQualityWatch")
 
+#TODO:  add column to identify watch, bind rows, then stacked bar 
+all_watch_categories <- bind_rows(gwwatch_urls, wwatch_urls, wqwatch_urls) %>% 
+  #removing some categories that aren't data views 
+  filter(category != "REMOVE")  %>% group_by(category, watch) %>% 
+  summarize(uniquePageviews = sum(uniquePageviews))
 
-
-source('R/water_watch_urls.R')
-wqwatch_urls <- analyze_wqwatch_urls(all_pages$all_raw$wqwatch)
-
+watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePageviews))+
+  geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Page Category", y = "Summed unique page views* of category pages") + 
+  scale_y_continuous(labels=scales::comma) + 
+  scale_x_discrete(limits = c("Site", "State", "National", "Other"))
+ggsave(filename = "all_watches_categories.png")
