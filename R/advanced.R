@@ -37,7 +37,14 @@ wwatch_urls <- analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch,
 wqwatch_urls <- analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch) %>% 
   mutate(watch = "WaterQualityWatch")
 
-#TODO:  add column to identify watch, bind rows, then stacked bar 
+#network-level plots
+gww_networks <- gwwatch_networks(all_watch_pages$all_raw$gwwatch)
+ww_networks <- wwatch_networks(all_watch_pages$all_raw$wwatch, ws = "ww_networks", 
+                               plot_file = "wwatch_networks.png")
+wq_networks <- wwatch_networks(all_watch_pages$all_raw$wqwatch, ws = "wqw_networks",
+                               plot_file = "wq_networks.png")
+
+#overall category plot
 all_watch_categories <- bind_rows(gwwatch_urls, wwatch_urls, wqwatch_urls) %>% 
   #removing some categories that aren't data views 
   filter(category != "REMOVE")  %>% group_by(category, watch) %>% 
