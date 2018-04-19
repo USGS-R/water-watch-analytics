@@ -16,7 +16,8 @@ analyze_wqwatch_urls <- function(path_df){
                                    by = c(path_no_query = "pagePath minus query string"))
   wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique Page Views*")
+    labs(x = "Page group", y = "Summed unique Page Views*") +
+    ggtitle('WaterQualityWatch page groups')
   ggsave(filename = "wqwatch_paths.png")
   invisible(path_df_human_names)
 }
@@ -60,8 +61,10 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
   
   wwatch_plot <- ggplot(path_df_human, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
-  ggsave(filename = "wwatch_paths.png", width = 6)
+    labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +
+    ggtitle('WaterWatch page groups')
+  ggsave(filename = "wwatch_paths.png", width = 6) 
+    
   invisible(path_df_human)
 }
 
@@ -92,7 +95,8 @@ wwatch_networks <- function(path_df, ws, plot_file) {
                                                              n = n()) %>% filter(!is.na(network))
   wwatch_nets_plot <- ggplot(networks_df, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
+    labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +
+    ggtitle(paste(ws, "network views"))
   ggsave(filename = plot_file)
   invisible(networks_df)
 }

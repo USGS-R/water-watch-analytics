@@ -54,5 +54,6 @@ watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePagev
   geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "Page Category", y = "Summed unique page views* of category pages") + 
   scale_y_continuous(labels=scales::comma) + 
-  scale_x_discrete(limits = c("Site", "State", "National", "Other"))
+  scale_x_discrete(limits = c("Site", "State", "National", "Other")) +
+  ggtitle("Page categories across all watches")
 ggsave(filename = "all_watches_categories.png")
