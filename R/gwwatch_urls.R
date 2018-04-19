@@ -7,7 +7,7 @@ analyze_gww_urls <- function(path_df){
                                                                  pattern = "\\?.*", 
                                                                  replacement = "")))
   path_df_asp_summary <- group_by(path_df_asp, by = path_no_query) %>% 
-    summarise(uniquePageViews = sum(uniquePageViews)) %>% arrange(desc(uniquePageViews))
+    summarise(uniquePageviews = sum(uniquePageViews)) %>% arrange(desc(uniquePageviews))
   path_df_asp_toplot <- slice(path_df_asp_summary, 1:15)
   
   #pull from google sheet
@@ -20,11 +20,11 @@ analyze_gww_urls <- function(path_df){
   #do we want summed unique pageviews for a category?  Or sessions that went to a category (would be lower)?
   #maybe content groups will provide this?
   
-  asp_plot <- ggplot(path_df_asp_human_names, aes(x = reorder(contents, -uniquePageViews), y = uniquePageViews))+
+  asp_plot <- ggplot(path_df_asp_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Unique Page Views")
+    labs(x = "Page group", y = "Summed unique page views*")
   ggsave(filename = "gwwatch_path_asp.png")
-  invisible(path_df_asp_summary)
+  invisible(path_df_asp_human_names)
 }
 
 gwwatch_networks <- function(path_df) {

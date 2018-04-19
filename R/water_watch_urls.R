@@ -6,15 +6,15 @@ analyze_wqwatch_urls <- function(path_df){
                                                 ignore.case = TRUE)) %>% 
     mutate(path_no_query = tolower(gsub(x = pagePath, pattern = "\\?.*", 
                                         replacement = ""))) %>% 
-    group_by(path_no_query) %>% summarize(uniquePageViews = sum(uniquePageViews)) %>% 
-    filter(uniquePageViews > 200) %>% arrange(desc(uniquePageViews))
+    group_by(path_no_query) %>% summarize(uniquePageviews = sum(uniquePageViews)) %>% 
+    filter(uniquePageviews > 200) %>% arrange(desc(uniquePageviews))
   
   #join on human names
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "WQW")
   #join on human readable names
   path_df_human_names <- left_join(path_df_no_string, plot_human_names, 
                                    by = c(path_no_query = "pagePath minus query string"))
-  wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageViews), y = uniquePageViews))+
+  wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Page group", y = "Summed unique Page Views*")
   ggsave(filename = "wqwatch_paths.png")
@@ -27,26 +27,41 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
                                              ignore.case = TRUE)) %>% 
     mutate(pagePath = gsub(pattern = "index.php", replacement = "", x = pagePath),
            contents = ifelse(pagePath == "/", yes = "Root home page",
-                             no = "Everything else")) %>% 
+                             no = "Everything else"),
+           category = ifelse(pagePath == "/", yes = "Other", no = "Other")) %>% 
+    
     mutate(contents = ifelse(test = (pagePath == "/?id=ww_current" | pagePath == "/?id=real"),
-                             yes = "National realtime historical percentile map", no = contents)) %>% 
+                             yes = "National realtime historical percentile map", no = contents),
+           category = ifelse(pagePath == "/?id=ww_current", yes = "National", no = category)) %>% 
+    
     mutate(contents = ifelse(test = grepl("id=ww_flood", x = pagePath) & !grepl("r=..", x= pagePath),
-                             yes = "National flood and high flow map", no = contents)) %>% 
+                             yes = "National flood and high flow map", no = contents),
+           category = ifelse(test = grepl("id=ww_flood", x = pagePath) & !grepl("r=..", x= pagePath),
+                             yes = "Other", no = category)) %>% 
+    
     mutate(contents = ifelse(test = grepl("id=ww_flood", x = pagePath) & grepl("r=..", x= pagePath),
-                             yes = "State/region flood and high flow maps", no = contents)) %>%
+                             yes = "State/region flood and high flow maps", no = contents),
+           category = ifelse(test = grepl("id=ww_flood", x = pagePath) & grepl("r=..", x= pagePath),
+                             yes = "Other", no = category)) %>%
+    
     mutate(contents = ifelse(test = grepl("m=real", x = pagePath) & grepl("r=..", x= pagePath),
-                             yes = "State/region real time \nhistorical percentile maps", no = contents)) %>% 
-    group_by(contents) %>% summarize(uniquePageviews = sum(uniquePageViews))
+                             yes = "State/region real time \nhistorical percentile maps", no = contents),
+           category = ifelse(test = grepl("m=real", x = pagePath) & grepl("r=..", x= pagePath),
+                             yes = "State", no = category)) %>% 
+    
+    group_by(contents, category) %>% summarize(uniquePageviews = sum(uniquePageViews))
   
   #add in nwis site page traffic from waterwatch
   nwis_df <- nwis_df %>% filter(source == "waterwatch.usgs.gov") 
-  nwis_row <- tibble(contents = "NWIS web site page \nreffered from WaterWatch*", uniquePageviews = sum(nwis_df$uniquePageviews))
+  nwis_row <- tibble(contents = "NWIS web site page \nreferred from WaterWatch**", 
+                     uniquePageviews = sum(nwis_df$uniquePageviews),
+                     category = "Site")
   path_df_human <- bind_rows(path_df_human, nwis_row)
   
   wwatch_plot <- ggplot(path_df_human, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma)
-  ggsave(filename = "wwatch_paths.png")
+  ggsave(filename = "wwatch_paths.png", width = 6)
   invisible(path_df_human)
 }
 
