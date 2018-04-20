@@ -8,24 +8,27 @@ analyze_gww_urls <- function(path_df){
                                                                  replacement = "")))
   path_df_asp_summary <- group_by(path_df_asp, by = path_no_query) %>% 
     summarise(uniquePageviews = sum(uniquePageViews)) %>% arrange(desc(uniquePageviews))
-  path_df_asp_toplot <- slice(path_df_asp_summary, 1:15)
   
   #pull from google sheet
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "GWW")
   #join on human readable names
-  path_df_asp_human_names <- left_join(path_df_asp_toplot, plot_human_names, 
+  path_df_asp_human_names <- left_join(path_df_asp_summary, plot_human_names, 
                                       by = c(by = "pagePath minus query string")) %>% 
-    filter(contents != "REMOVE")
+    mutate(contents = ifelse(is.na(contents), yes = "Everything else", no = contents),
+           category = ifelse(is.na(contents), yes = "Other", no = contents)) %>% 
+    filter( contents != "REMOVE")
   
   #do we want summed unique pageviews for a category?  Or sessions that went to a category (would be lower)?
   #maybe content groups will provide this?
   
   asp_plot <- ggplot(path_df_asp_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique page views*") +
-    ggtitle('GroundwaterWatch page groups')
-  ggsave(filename = "gwwatch_path_asp.png")
-  invisible(path_df_asp_human_names)
+    labs(x = "Page group", y = "Summed unique page views*") + 
+    scale_y_continuous(labels = format_si()) +
+    ggtitle('GroundwaterWatch page groups', 
+            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))         
+  ggsave(filename = "gwwatch_path_asp.png", width = 6)
+  invisible(list(path_df_asp_human_names, asp_plot))
 }
 
 gwwatch_networks <- function(path_df) {

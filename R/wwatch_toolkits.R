@@ -20,5 +20,7 @@ toolkit_pages <- left_join(wwatch_pages, toolkit_query_strings,
 toolkit_plot <- ggplot(toolkit_pages, aes(x = reorder(toolkit_name, -uniquePageViews), y = uniquePageViews))+
   geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "Toolkit name", y = "Summed unique page views\nof toolkit home page") + scale_y_continuous(labels=scales::comma) +
-  ggtitle("Unique page views of toolkit main pages")
+  ggtitle("Unique page views of toolkit main pages", 
+          subtitle = paste("Previous twelve months from", attr(all_pages$all_raw$wwatch, "dataPullDate")))
+  
 ggsave(filename = "toolkits.png")

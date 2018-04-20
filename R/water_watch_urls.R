@@ -1,5 +1,6 @@
 library(dplyr)
 library(googlesheets)
+library(ggplot2)
 analyze_wqwatch_urls <- function(path_df){
   #only main map and state views for WQWatch
   path_df_no_string <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath, 
@@ -7,19 +8,23 @@ analyze_wqwatch_urls <- function(path_df){
     mutate(path_no_query = tolower(gsub(x = pagePath, pattern = "\\?.*", 
                                         replacement = ""))) %>% 
     group_by(path_no_query) %>% summarize(uniquePageviews = sum(uniquePageViews)) %>% 
-    filter(uniquePageviews > 200) %>% arrange(desc(uniquePageviews))
+    arrange(desc(uniquePageviews))
   
   #join on human names
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "WQW")
   #join on human readable names
   path_df_human_names <- left_join(path_df_no_string, plot_human_names, 
-                                   by = c(path_no_query = "pagePath minus query string"))
+                                   by = c(path_no_query = "pagePath minus query string")) %>% 
+    mutate(contents = ifelse(is.na(contents), yes = "Everything else", no = contents),
+           cateogry = ifelse(is.na(contents), yes = "Other", no = category))
   wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique Page Views*") +
-    ggtitle('WaterQualityWatch page groups')
+    labs(x = "Page group", y = "Summed unique Page Views*") + 
+    scale_y_continuous(labels = format_si()) +
+    ggtitle('WaterQualityWatch page groups', 
+            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))
   ggsave(filename = "wqwatch_paths.png")
-  invisible(path_df_human_names)
+  invisible(list(path_df_human_names, wqwatch_plot))
 }
 
 analyze_wwatch_urls <- function(path_df, nwis_df) {
@@ -45,7 +50,7 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
            category = ifelse(test = grepl("id=ww_flood", x = pagePath) & grepl("r=..", x= pagePath),
                              yes = "Other", no = category)) %>%
     
-    mutate(contents = ifelse(test = grepl("m=real", x = pagePath) & grepl("r=..", x= pagePath),
+    mutate(contents = ifelse(test = grepl("[m|id]=real|id=ww_current", x = pagePath) & grepl("r=..", x= pagePath),
                              yes = "State/region real time \nhistorical percentile maps", no = contents),
            category = ifelse(test = grepl("m=real", x = pagePath) & grepl("r=..", x= pagePath),
                              yes = "State", no = category)) %>% 
@@ -61,11 +66,13 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
   
   wwatch_plot <- ggplot(path_df_human, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +
-    ggtitle('WaterWatch page groups')
+    labs(x = "Page group", y = "Summed unique page views*") + scale_y_continuous(labels=format_si()) +
+    ggtitle('WaterWatch page groups', 
+            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate"))) +            
+    labs(caption = "** Likely an underestimate") 
   ggsave(filename = "wwatch_paths.png", width = 6) 
     
-  invisible(path_df_human)
+  invisible(list(path_df_human, wwatch_plot))
 }
 
 mutate_grep_query_param <- function(df, name, query_param) {
