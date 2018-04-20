@@ -28,6 +28,13 @@ get_popular_pages <- function(wq_segment, no_wq_segment, gwwatch_view, wwatch_vi
                                    base_url = "waterwatch.usgs.gov/wqwatch")
   gwwatch_pages <- summarize_pages(gw_data, 
                                    base_url = "groundwaterwatch.usgs.gov")
+  attr(waterwatch_pages, "dataPullDate") <- Sys.Date()
+  attr(wqwatch_pages, "dataPullDate") <- Sys.Date()
+  attr(gwwatch_pages, "dataPullDate") <- Sys.Date()
+  attr(nowq_seg_data, "dataPullDate") <- Sys.Date()
+  attr(wq_seg_data, "dataPullDate") <- Sys.Date()
+  attr(gw_data, "dataPullDate") <- Sys.Date()
+  
   all_top_pages <- list(wwatch = waterwatch_pages, 
                     wqwatch = wqwatch_pages,
                     gwwatch = gwwatch_pages)
