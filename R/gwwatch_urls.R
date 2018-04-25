@@ -44,12 +44,12 @@ gwwatch_networks <- function(path_df) {
   path_df_ncd_st_aq <- path_df_ncd %>% mutate(network = ifelse(is.na(network) & !is.na(ncd) & ncd != "ncd=", 
                                                                yes = "State/local/aquifer",
                                                                no = network)) %>% 
-    filter(!is.na(network
-    ))
+    mutate(network = ifelse(is.na(network), yes = "Other", no = network))
   gwwatch_nets_plot <- ggplot(path_df_ncd_st_aq, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +
-    ggtitle('GroundwaterWatch network views')
+    ggtitle('GroundwaterWatch network views',
+            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))
   ggsave(filename = "gwwatch_networks.png")
   invisible(path_df_ncd_st_aq)
 }

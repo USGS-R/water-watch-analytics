@@ -99,7 +99,9 @@ wwatch_networks <- function(path_df, ws, plot_file) {
   }
   
   networks_df <- path_df %>% group_by(network) %>% summarize(uniquePageViews = sum(uniquePageViews), 
-                                                             n = n()) %>% filter(!is.na(network))
+                                                             n = n()) %>% mutate(network = ifelse(is.na(network),
+                                                                                                  yes = "Other",
+                                                                                                  no = network))
   wwatch_nets_plot <- ggplot(networks_df, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
     geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +

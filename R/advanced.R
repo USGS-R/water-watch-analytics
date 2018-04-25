@@ -1,6 +1,7 @@
 library(googleAnalyticsR)
 library(googleAuthR)
 library(zeallot)
+library(assertthat)
 
 config <- yaml::read_yaml('config.yaml')
 wqwatch_segment <- readRDS('wqwatch_segment.rds')
@@ -25,7 +26,7 @@ nwis_web_filtered <- nwis_web %>% filter(grepl(pattern = "site_no", x = pagePath
                                            grepl(patter="waterwatch", x= source))
 attr(nwis_web_filtered, "dataPullDate") <- Sys.Date()
 all_watch_pages$all_raw$nwis <- nwis_web_filtered
-
+assert_that(attr(nwis_web_filtered, "dataPullDate") == attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
 saveRDS(all_watch_pages, file = 'all_pages.rds')
 
 #page group breakdowns
@@ -59,5 +60,6 @@ watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePagev
   labs(x = "Page Category", y = "Summed unique page views* of category pages") + 
   scale_y_continuous(labels=scales::comma) + 
   scale_x_discrete(limits = c("Site", "State", "National", "Other")) +
-  ggtitle("Page categories across all watches")
+  ggtitle("Page categories across all watches",
+          subtitle = paste("Previous twelve months from", attr(nwis_web_filtered, "dataPullDate")))
 ggsave(filename = "all_watches_categories.png")
