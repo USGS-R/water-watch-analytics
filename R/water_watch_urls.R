@@ -107,6 +107,6 @@ wwatch_networks <- function(path_df, ws, plot_file) {
     labs(x = "Network", y = "Summed unique page views*") + scale_y_continuous(labels=scales::comma) +
     ggtitle(paste(ws, "network views"))
   ggsave(filename = plot_file)
-  invisible(networks_df)
+  invisible(list(networks_df, wwatch_nets_plot))
 }
 

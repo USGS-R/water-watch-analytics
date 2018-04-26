@@ -51,5 +51,5 @@ gwwatch_networks <- function(path_df) {
     ggtitle('GroundwaterWatch network views',
             subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))
   ggsave(filename = "gwwatch_networks.png")
-  invisible(path_df_ncd_st_aq)
+  invisible(list(path_df_ncd_st_aq, gwwatch_nets_plot))
 }
