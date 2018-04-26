@@ -1,36 +1,109 @@
 ---
-title: "Water Watch Analytics"
+title: "WaterWatch/GroundwaterWatch Page Usage"
 author: "David Watkins"
-date: "4/20/2018"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+This report begins to examine the usage of different parts of the [Water Watch](waterwatch.usgs.gov) and [Groundwater Watch](groundwaterwatch.usgs.gov) web sites. While it focuses on just aggregate total traffic to get an initial picture, there are many more-granular ways to analyze this data.   
+
+### First, a word on the data 
+The data we used here was pulled from the Google Analytics (GA) API.  Records extend from before 2010 for Water Watch, before 2014 for Groundwater Watch, and 2017 for Water Quality Watch.  All three sites have a basic Google Analytics implementation that records when pages are viewed, and a wide range of information about users, but nothing about how the users interact with the site beyond time spend on a page. We can tell where users went and for how long, but we don't know what they did there. 
+
+We use three metrics drawn from the GA data:
+
+* __sessions__: Visits to a web site, by new or returning users
+* __users__: An approximation of the number of unique users on a site, based on a cookie stored in the user's browser.  This metric is some degree of an overestimate, since it one person visiting on multiple devices or browsers will appear as different users.
+*__unique page views__: A session viewing a single web page at least once; if a person views a page multiple times during the same session, it is only counted once.
+
+Google's definitions of these and other GA terms can be found in their (dimensions and metrics explorer)[https://developers.google.com/analytics/devguides/reporting/core/dimsmets].
+
+### How these plots were made
+The long-term traffic plots are simple monthly totals.
+
+For the page-level views that follow, we pulled unique page views for every unique URL visited on each site in the last year*. We used the URLs to infer page content, based on mappings in (this spreadsheet)[https://docs.google.com/spreadsheets/d/14OLEuUkdrxc3m65UZcS9VxPj5QOx6NKhvvEWcKJgnuo/edit#gid=0], which may be imperfect (some pages can be reached by more than one unique query strings).  For completeness, every plot includes an "Everything else" or "Other" category, which includes all URLs that we didn't categorize in our analysis.
+
+We summed the unique page views for all pages that we grouped together.  This means that while a single unique page is only counted once, there may be many pages in a group (e.g., site pages on groundwater watch) viewed during a single session by the same person, all of which would be counted.  This could bias unique page view sums higher for larger groups of pages (e.g., site pages vs. a national map view).
+
+For "popular page groups" plots, the groups were hand-curated based on individual URLs with the most traffic that corresponded to obvious parts of the sites. The networks in the "network-view" plots are more conceptually driven.     
+
+*WaterWatch and NWIS web both show strong seasonal trends in usage, so shorter analysis periods should be used with caution.
+
+Now to the actual data:
+###Overall long-term traffic
+```{r overall_traffic}
+library(zeallot)
+source('R/total_sessions.R')
+c(sessions_plot, users_plot) %<-% total_sessions_users_plot()
+sessions_plot
+users_plot
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r test, echo=FALSE}
+_Figure 1: Monthly session and user counts_  
+Water Watch dominates Groundwater Watch and Water Quality Watch in total traffic.  There appears to be a downward trend in Water Watch traffic since 2013, although note we are just entering peak use season for 2018.  
+```{r ww_pages}
 source('R/water_watch_urls.R')
 source('R/plot_helper.R')
-library(zeallot)
+
 all_watch_pages <- readRDS('all_pages.rds')
-c(df, plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
+c(., ww_plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
                                    nwis_df = all_watch_pages$all_raw$nwis)
-plot
+ww_plot
 ```
 
-## Including Plots
+_Figure 2: Popular page groups on waterwatch.usgs.gov_    
+State and region real-time historical percentile maps are by far the most category.  Water watch links out to NWIS web site pages from its maps, so NWIS site page traffic referred from Water Watch is included here.  Note that this may be an underestimate --- GA is not always able to tell where a visit originated from.  Tagging links with (UTM parameters)[https://www.lunametrics.com/blog/2017/09/19/campaign-links-in-google-analytics/] can make this number more concrete.
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r ww_nets}
+c(., ww_net_plot) %<-% wwatch_networks(path_df = all_watch_pages$all_raw$wwatch, ws = "ww_networks", plot_file = "wwatch_networks.png")
+ww_net_plot
 ```
+_Figure 3: Water Watch network view traffic_  
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r ww_toolkits}
+source('R/wwatch_toolkits.R')
+toolkit_plot <- ww_toolkit_plot()
+toolkit_plot
+```
+_Figure 4: Water Watch toolkit traffic_   
+
+The toolkits receive orders of magnitude less traffic than other parts of the site. This plot only counts the "home page" for each toolbox, to control for URL modifications that happen when the toolboxes are used.  This would be a good area to examine the percentage of USGS network traffic.
+
+
+```{r wq_pages}
+c(., wq_pages_plot) %<-% analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch)
+wq_pages_plot
+```
+_Figure 5: Water Quality Watch popular page groups_
+
+
+```{r wq_networks}
+c(., wq_net_plot) %<-% wwatch_networks(all_watch_pages$all_raw$wqwatch, ws = "wqw_networks", plot_file = "wq_networks.png")
+wq_pages_plot
+```
+_Figure 6: Water Quality Watch networks_
+
+```{r gw_pages}
+source('R/gwwatch_urls.R')
+c(., gw_pages_plot) %<-% analyze_gww_urls(all_watch_pages$all_raw$gwwatch)
+gw_pages_plot
+```
+_Figure 7: Popular Groundwater Watch page groups_
+
+```{r gw_networks}
+c(., gw_net_plot) %<-% gwwatch_networks(all_watch_pages$all_raw$gwwatch)
+gw_net_plot
+```
+_Figure 8: Groundwater Watch networks_
+
+
+
+## Other dimensions to explore
+Include fraction of internal network traffic, exit/entry pages, event specific, geography, time on page, popular sites, platforms
+
+we have the data
