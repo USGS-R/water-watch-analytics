@@ -17,23 +17,26 @@ We use three metrics drawn from the GA data:
 
 * __sessions__: Visits to a web site, by new or returning users
 * __users__: An approximation of the number of unique users on a site, based on a cookie stored in the user's browser.  This metric is some degree of an overestimate, since it one person visiting on multiple devices or browsers will appear as different users.
-*__unique page views__: A session viewing a single web page at least once; if a person views a page multiple times during the same session, it is only counted once.
+* __unique page views__: A session viewing a single web page at least once; if a person views a page multiple times during the same session, it is only counted once.
 
-Google's definitions of these and other GA terms can be found in their (dimensions and metrics explorer)[https://developers.google.com/analytics/devguides/reporting/core/dimsmets].
+Google's definitions of these and other GA terms can be found in their [dimensions and metrics explorer](https://developers.google.com/analytics/devguides/reporting/core/dimsmets).
 
 ### How these plots were made
 The long-term traffic plots are simple monthly totals.
 
-For the page-level views that follow, we pulled unique page views for every unique URL visited on each site in the last year*. We used the URLs to infer page content, based on mappings in (this spreadsheet)[https://docs.google.com/spreadsheets/d/14OLEuUkdrxc3m65UZcS9VxPj5QOx6NKhvvEWcKJgnuo/edit#gid=0], which may be imperfect (some pages can be reached by more than one unique query strings).  For completeness, every plot includes an "Everything else" or "Other" category, which includes all URLs that we didn't categorize in our analysis.
+For the page-level views that follow, we pulled unique page views for every unique URL visited on each site in the last year*. We used the URLs to infer page content, based on mappings in [this spreadsheet](https://docs.google.com/spreadsheets/d/14OLEuUkdrxc3m65UZcS9VxPj5QOx6NKhvvEWcKJgnuo/edit#gid=0), which may be imperfect (some pages can be reached by more than one unique query strings).  For completeness, every plot includes an "Everything else" or "Other" category, which includes all URLs that we didn't categorize in our analysis.
 
 We summed the unique page views for all pages that we grouped together.  This means that while a single unique page is only counted once, there may be many pages in a group (e.g., site pages on groundwater watch) viewed during a single session by the same person, all of which would be counted.  This could bias unique page view sums higher for larger groups of pages (e.g., site pages vs. a national map view).
 
 For "popular page groups" plots, the groups were hand-curated based on individual URLs with the most traffic that corresponded to obvious parts of the sites. The networks in the "network-view" plots are more conceptually driven.     
 
-*WaterWatch and NWIS web both show strong seasonal trends in usage, so shorter analysis periods should be used with caution.
+Code can be found [here](https://github.com/USGS-R/water-watch-analytics).
+
+*_WaterWatch and NWIS web both show strong seasonal trends in usage, so shorter analysis periods should be used with caution._
 
 Now to the actual data:
-###Overall long-term traffic
+
+### Total long-term traffic
 ```{r overall_traffic}
 library(zeallot)
 source('R/total_sessions.R')
@@ -49,13 +52,13 @@ source('R/water_watch_urls.R')
 source('R/plot_helper.R')
 
 all_watch_pages <- readRDS('all_pages.rds')
-c(., ww_plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
+c(wwatch_urls, ww_plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
                                    nwis_df = all_watch_pages$all_raw$nwis)
 ww_plot
 ```
 
 _Figure 2: Popular page groups on waterwatch.usgs.gov_    
-State and region real-time historical percentile maps are by far the most category.  Water watch links out to NWIS web site pages from its maps, so NWIS site page traffic referred from Water Watch is included here.  Note that this may be an underestimate --- GA is not always able to tell where a visit originated from.  Tagging links with (UTM parameters)[https://www.lunametrics.com/blog/2017/09/19/campaign-links-in-google-analytics/] can make this number more concrete.
+State and region real-time historical percentile maps are by far the most category.  Water watch links out to NWIS web site pages from its maps, so NWIS site page traffic referred from Water Watch is included here.  Note that this may be an underestimate --- GA is not always able to tell where a visit originated from.  Tagging links with [UTM parameters](https://www.lunametrics.com/blog/2017/09/19/campaign-links-in-google-analytics/) can make this number more concrete.
 
 
 ```{r ww_nets}
@@ -63,7 +66,7 @@ c(., ww_net_plot) %<-% wwatch_networks(path_df = all_watch_pages$all_raw$wwatch,
 ww_net_plot
 ```
 _Figure 3: Water Watch network view traffic_  
-
+Current streamflow maps are by far the most popular network view. 
 
 ```{r ww_toolkits}
 source('R/wwatch_toolkits.R')
@@ -76,34 +79,45 @@ The toolkits receive orders of magnitude less traffic than other parts of the si
 
 
 ```{r wq_pages}
-c(., wq_pages_plot) %<-% analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch)
+c(wqwatch_urls, wq_pages_plot) %<-% analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch)
 wq_pages_plot
 ```
-_Figure 5: Water Quality Watch popular page groups_
-
+_Figure 5: Water Quality Watch popular page groups_  
+State maps are the most popular, somewhat moreso than the national map.  
 
 ```{r wq_networks}
 c(., wq_net_plot) %<-% wwatch_networks(all_watch_pages$all_raw$wqwatch, ws = "wqw_networks", plot_file = "wq_networks.png")
-wq_pages_plot
+wq_net_plot
 ```
 _Figure 6: Water Quality Watch networks_
+The Water Quality Watch networks are all parameter-based.  Note that temperature is the default parameter, so it would be expected to be much higher. It would be difficult to separate out traffic that only view temperature on the way to another parameter. Traffic to the other parameters does not appear to be related to their menu position relative to temperature --- nitrate, the second most popular parameter, is in the middle of the menu. 
 
 ```{r gw_pages}
 source('R/gwwatch_urls.R')
-c(., gw_pages_plot) %<-% analyze_gww_urls(all_watch_pages$all_raw$gwwatch)
+c(gwwatch_urls, gw_pages_plot) %<-% analyze_gww_urls(all_watch_pages$all_raw$gwwatch)
 gw_pages_plot
 ```
-_Figure 7: Popular Groundwater Watch page groups_
+_Figure 7: Popular Groundwater Watch page groups_  
+Groundwater Watch site pages receive by far the most traffic, followed by the landing page (which links to multiple national views), and state and national views.
 
 ```{r gw_networks}
 c(., gw_net_plot) %<-% gwwatch_networks(all_watch_pages$all_raw$gwwatch)
 gw_net_plot
 ```
-_Figure 8: Groundwater Watch networks_
+_Figure 8: Groundwater Watch networks_  
+The "active" network (any measurements in the last 13 months) is by far the most popular network.  The large "Other" group largely consists of the landing page and county-level leaflet maps, which weren't categorized.
+  
+```{r combined_categories}
+  #need to add column first
+source('R/total_sessions.R')
+  wwatch_urls <- wwatch_urls %>% mutate(watch = "WaterWatch")
+  gwwatch_urls <- gwwatch_urls %>% mutate(watch = "GroundwaterWatch")
+  wqwatch_urls <- wqwatch_urls %>% mutate(watch = "WaterQualityWatch")
+  all_cat_plot <- all_watch_plot(gwwatch_urls, wwatch_urls, wqwatch_urls, pullDate = attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
+  all_cat_plot
+```
 
-
+Across all three Watches, state and site views are much more popular than national views by the summed unique pageviews metric. 
 
 ## Other dimensions to explore
-Include fraction of internal network traffic, exit/entry pages, event specific, geography, time on page, popular sites, platforms
-
-we have the data
+We have the data available to explore many other dimensions of web traffic, if there are useful applications for them.  With methods similar to this report, we can look at proportions of USGS network traffic (this report does not distinguish between external and interal traffic), entry and exit pages, popular monitoring sites, geographic origination around certain events, and many others. 

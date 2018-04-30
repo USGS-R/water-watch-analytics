@@ -83,3 +83,21 @@ total_sessions_users_plot <- function() {
   
   return(list(sessions_plot, users_plot))
 }
+
+all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
+  #overall category plot
+  all_watch_categories <- bind_rows(gwwatch_urls, wwatch_urls, wqwatch_urls) %>% 
+    #removing some categories that aren't data views 
+    filter(category != "REMOVE")  %>% group_by(category, watch) %>% 
+    summarize(uniquePageviews = sum(uniquePageviews))
+  
+  watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePageviews))+
+    geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Page Category", y = "Summed unique page views of category pages") + 
+    scale_y_continuous(labels=format_si()) + 
+    scale_x_discrete(limits = c("Site", "State", "National", "Other")) +
+    ggtitle("Page categories across all watches",
+            subtitle = paste("Previous twelve months from", pullDate))
+  ggsave(filename = "all_watches_categories.png")
+  return(watch_cat_plot)
+}
