@@ -87,10 +87,10 @@ wwatch_networks <- function(path_df, ws, plot_file) {
   #now network views
   wwatch_networks <- gs_read_csv(gs_title('Watches url mapping'), ws = ws)
   if(ws == "ww_networks"){
-    title <- "Water Quality Watch network views"
+    title <- "Water Watch network views"
     path_df <- path_df %>% filter(!grepl(pattern = "wqwatch", x = pagePath)) %>% mutate(network=NA)
   } else if(ws == "wqw_networks") {
-    title <- "Water Watch network views"
+    title <- "Water Quality Watch network views"
     path_df <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath)) %>% 
       mutate(network=ifelse(pagePath == "/wqwatch/", yes = "Temperature", no = NA))
   }
