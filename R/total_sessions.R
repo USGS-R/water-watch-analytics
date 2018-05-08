@@ -9,7 +9,7 @@ total_sessions_users_plot <- function() {
   config <- yaml::read_yaml('config.yaml')
   wwatch_view <- config$ga_views$wwatch
   gwwatch_view <- config$ga_views$gwwatch
-  
+  last_month <- zoo::Sys.yearmon() - 1/12
   gar_auth_service(config$ga_token)
   out_file <- 'total_sessions_users.rds'
   if(file.exists(out_file)) {
@@ -59,7 +59,7 @@ total_sessions_users_plot <- function() {
              segment = gsub(pattern = "gwwatch", replacement = "GroundWaterWatch", x= segment),
              segment = gsub(pattern = "no_wqwatch", replacement = "WaterWatch (no WQ)", x= segment),
              segment = gsub(pattern = "wqwatch", replacement = "WQ Watch", x= segment)) %>% 
-      filter(yearmon < zoo::as.yearmon("2018-04"))
+      filter(yearmon < last_month)
     saveRDS(object = all_watch_data, file = out_file)
     saveRDS(object = wqwatch_segment, file = "wqwatch_segment.rds")
     saveRDS(object = no_wqwatch_segment, file = "no_wqwatch_segment.rds")
@@ -69,7 +69,7 @@ total_sessions_users_plot <- function() {
     geom_line() + scale_y_continuous(labels = scales::comma,
                                      minor_breaks = seq(from = 0, to = 250000, by = 10000)) + 
     labs(x = "Date", y = "Sessions", color= "Watch") + 
-    ggtitle('Monthly Session Counts', subtitle = "Through March 2018")  
+    ggtitle('Monthly Session Counts', subtitle = paste("Through", last_month)) 
   ggsave(filename = "sessions.png", plot = sessions_plot)
   
   users_plot <- ggplot(data=all_watch_data,
@@ -77,7 +77,7 @@ total_sessions_users_plot <- function() {
     geom_line() + scale_y_continuous(labels = scales::comma,
                                      minor_breaks = seq(from = 0, to = 200000, by = 5000)) + 
     labs(x = "Date", y = "Users", color= "Watch") + 
-    ggtitle('Monthly User Counts', subtitle = "Through March 2018")
+    ggtitle('Monthly User Counts', subtitle = paste("Through", last_month))
   ggsave(filename = 'users.png', plot = users_plot)
   
   
