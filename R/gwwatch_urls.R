@@ -1,13 +1,14 @@
 library(googlesheets)
 library(dplyr)
 analyze_gww_urls <- function(path_df){
+  config <- yaml::read_yaml('config.yaml')
   #get the rest of the path before query string
   #don't be case sensitive for this analysis
   path_df_asp <- path_df %>% mutate(path_no_query = tolower(gsub(x = path_df$pagePath, 
                                                                  pattern = "\\?.*", 
                                                                  replacement = "")))
   path_df_asp_summary <- group_by(path_df_asp, by = path_no_query) %>% 
-    summarise(uniquePageviews = sum(uniquePageViews)) %>% arrange(desc(uniquePageviews))
+    summarise(uniquePageviews = sum(uniquePageviews)) %>% arrange(desc(uniquePageviews))
   
   #pull from google sheet
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "GWW")
@@ -20,18 +21,19 @@ analyze_gww_urls <- function(path_df){
   
   #do we want summed unique pageviews for a category?  Or sessions that went to a category (would be lower)?
   #maybe content groups will provide this?
-  
+  pull_date <- attr(path_df, "dataPullDate")
   asp_plot <- ggplot(path_df_asp_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
-    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_col(fill = config$palette$gww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = "Page group", y = "Summed unique page views") + 
     scale_y_continuous(labels = format_si()) +
     ggtitle('GroundwaterWatch page groups', 
-            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))         
+            subtitle = paste(pull_date - 365, "through", pull_date))         
   ggsave(filename = "gwwatch_path_asp.png", width = 6)
   invisible(list(path_df_asp_human_names, asp_plot))
 }
 
 gwwatch_networks <- function(path_df) {
+  config <- yaml::read_yaml('config.yaml')
   gww_networks <- gs_read_csv(gs_title('Watches url mapping'), ws = "gww_networks")
   path_df_ncd <- path_df %>% mutate(ncd = stringr::str_extract(pagePath, "ncd=[:alnum:]{0,6}"),
                                     network = NA) %>% filter(!grepl(pattern = "awlsite", x = pagePath,
@@ -45,11 +47,12 @@ gwwatch_networks <- function(path_df) {
                                                                yes = "State/local/aquifer",
                                                                no = network)) %>% 
     mutate(network = ifelse(is.na(network), yes = "Other", no = network))
-  gwwatch_nets_plot <- ggplot(path_df_ncd_st_aq, aes(x = reorder(network, -uniquePageViews), y = uniquePageViews))+
-    geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=scales::comma) +
+  pull_date <- attr(path_df, "dataPullDate")
+  gwwatch_nets_plot <- ggplot(path_df_ncd_st_aq, aes(x = reorder(network, -uniquePageviews), y = uniquePageviews))+
+    geom_col(fill = config$palette$gww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=format_si()) +
     ggtitle('GroundwaterWatch network views',
-            subtitle = paste("Previous twelve months from", attr(path_df, "dataPullDate")))
+            subtitle = paste(pull_date - 365, "through", pull_date))
   ggsave(filename = "gwwatch_networks.png")
   invisible(list(path_df_ncd_st_aq, gwwatch_nets_plot))
 }
