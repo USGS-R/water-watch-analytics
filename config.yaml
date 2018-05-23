@@ -6,3 +6,8 @@ ga_views:
 ga_token: '~/.vizlab/VIZLAB-a48f4107248c.json'
 
 url_sheet_name: 'Watches url mapping'
+
+palette: 
+  ww: '#8da0cb'
+  gww: '#66c2a5'
+  wqw: '#fc8d62'  #in order for WW, GWW, WQW
