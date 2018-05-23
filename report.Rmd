@@ -8,9 +8,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
+### Executive Summary
+Waterwatch traffic is decreasing past couple years
+most valuable categories in each watch - ToP, entrance/exits/etc narrative
+
+
 This report begins to examine the usage of different parts of the [Water Watch](waterwatch.usgs.gov) and [Groundwater Watch](groundwaterwatch.usgs.gov) web sites. While it focuses on just aggregate total traffic to get an initial picture, there are many more-granular ways to analyze this data.   
 
-### First, a word on the data 
+### Methods 
 The data we used here was pulled from the Google Analytics (GA) API.  Records extend from before 2010 for Water Watch, before 2014 for Groundwater Watch, and 2017 for Water Quality Watch.  All three sites have a basic Google Analytics implementation that records when pages are viewed, and a wide range of information about users, but nothing about how the users interact with the site beyond time spend on a page. We can tell where users went and for how long, but we don't know what they did there. 
 
 We use three metrics drawn from the GA data:
@@ -40,21 +45,24 @@ Now to the actual data:
 ```{r overall_traffic}
 library(zeallot)
 source('R/total_sessions.R')
-c(sessions_plot, users_plot) %<-% total_sessions_users_plot()
+c(sessions_plot, sessions_plot_int, users_plot) %<-% total_sessions_users_plot()
 sessions_plot
 users_plot
+sessions_plot_int
 ```
+
+### Water Watch
 
 _Figure 1: Monthly session and user counts_  
 Water Watch dominates Groundwater Watch and Water Quality Watch in total traffic.  There appears to be a downward trend in Water Watch traffic since 2013, although note we are just entering peak use season for 2018.  
-```{r ww_pages}
+```{r ww_pages, fig.height=8}
 source('R/water_watch_urls.R')
 source('R/plot_helper.R')
 
 all_watch_pages <- readRDS('all_pages.rds')
 c(wwatch_urls, ww_plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
                                    nwis_df = all_watch_pages$all_raw$nwis)
-ww_plot
+grid::grid.draw(ww_plot)
 ```
 
 _Figure 2: Popular page groups on waterwatch.usgs.gov_    
@@ -65,6 +73,7 @@ State and region real-time historical percentile maps are by far the most catego
 c(., ww_net_plot) %<-% wwatch_networks(path_df = all_watch_pages$all_raw$wwatch, ws = "ww_networks", plot_file = "wwatch_networks.png")
 ww_net_plot
 ```
+
 _Figure 3: Water Watch network view traffic_  
 Current streamflow maps are by far the most popular network view. 
 
@@ -73,15 +82,18 @@ source('R/wwatch_toolkits.R')
 toolkit_plot <- ww_toolkit_plot()
 toolkit_plot
 ```
+
 _Figure 4: Water Watch toolkit traffic_   
 
 The toolkits receive orders of magnitude less traffic than other parts of the site. This plot only counts the "home page" for each toolbox, to control for URL modifications that happen when the toolboxes are used.  This would be a good area to examine the percentage of USGS network traffic.
 
+### Water Quality Watch
 
 ```{r wq_pages}
 c(wqwatch_urls, wq_pages_plot) %<-% analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch)
 wq_pages_plot
 ```
+
 _Figure 5: Water Quality Watch popular page groups_  
 State maps are the most popular, somewhat moreso than the national map.  
 
@@ -89,14 +101,18 @@ State maps are the most popular, somewhat moreso than the national map.
 c(., wq_net_plot) %<-% wwatch_networks(all_watch_pages$all_raw$wqwatch, ws = "wqw_networks", plot_file = "wq_networks.png")
 wq_net_plot
 ```
+
 _Figure 6: Water Quality Watch networks_
 The Water Quality Watch networks are all parameter-based.  Note that temperature is the default parameter, so it would be expected to be much higher. It would be difficult to separate out traffic that only view temperature on the way to another parameter. Traffic to the other parameters does not appear to be related to their menu position relative to temperature --- nitrate, the second most popular parameter, is in the middle of the menu. 
+
+### Groundwater Watch
 
 ```{r gw_pages}
 source('R/gwwatch_urls.R')
 c(gwwatch_urls, gw_pages_plot) %<-% analyze_gww_urls(all_watch_pages$all_raw$gwwatch)
 gw_pages_plot
 ```
+
 _Figure 7: Popular Groundwater Watch page groups_  
 Groundwater Watch site pages receive by far the most traffic, followed by the landing page (which links to multiple national views), and state and national views.
 
@@ -104,19 +120,25 @@ Groundwater Watch site pages receive by far the most traffic, followed by the la
 c(., gw_net_plot) %<-% gwwatch_networks(all_watch_pages$all_raw$gwwatch)
 gw_net_plot
 ```
+
 _Figure 8: Groundwater Watch networks_  
 The "active" network (any measurements in the last 13 months) is by far the most popular network.  The large "Other" group largely consists of the landing page and county-level leaflet maps, which weren't categorized.
   
 ```{r combined_categories}
   #need to add column first
 source('R/total_sessions.R')
-  wwatch_urls <- wwatch_urls %>% mutate(watch = "WaterWatch")
-  gwwatch_urls <- gwwatch_urls %>% mutate(watch = "GroundwaterWatch")
-  wqwatch_urls <- wqwatch_urls %>% mutate(watch = "WaterQualityWatch")
-  all_cat_plot <- all_watch_plot(gwwatch_urls, wwatch_urls, wqwatch_urls, pullDate = attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
-  all_cat_plot
+wwatch_urls <- wwatch_urls %>% mutate(watch = "WaterWatch")
+gwwatch_urls <- gwwatch_urls %>% mutate(watch = "GroundwaterWatch")
+wqwatch_urls <- wqwatch_urls %>% mutate(watch = "WaterQualityWatch")
+wwatch_date <- attr(all_watch_pages$all_raw$wwatch, "dataPullDate")
+gwwatch_date <- attr(all_watch_pages$all_raw$gwwatch, "dataPullDate")
+wq_date <- attr(all_watch_pages$all_raw$wqwatch, "dataPullDate")
+check <- assertthat::assert_that( wwatch_date == wq_date && wwatch_date == gwwatch_date) 
+all_cat_plot <- all_watch_plot(gwwatch_urls, wwatch_urls, wqwatch_urls, pullDate = wwatch_date)
+all_cat_plot
 ```
 
+_Figure 9: Page categories across all watches_   
 Across all three Watches, state and site views are much more popular than national views by the summed unique pageviews metric. 
 
 ## Other dimensions to explore
