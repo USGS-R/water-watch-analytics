@@ -61,7 +61,7 @@ panel_ga_plot <- function(path_df_human, title, pull_date,
     theme(axis.text.x = element_blank(), axis.title.x = element_blank())
   
   all_plots <- plot_grid(plot_time, plot_entrance, plot_exit, 
-                         plot_views, rel_heights = c(1,1,1,2.5),
+                         plot_views, rel_heights = c(1,1,1,3),
                          ncol = 1, align = "v")
   png(filename = filename, height = 9, units = "in", res = 200, width = 6)
   print(all_plots)

@@ -21,9 +21,6 @@ analyze_wqwatch_urls <- function(path_df){
     arrange(desc(uniquePageviews_sum)) %>% 
     mutate(exitRate = exits_sum/pageViews_sum,
            entranceRate = entrances_sum/pageViews_sum,
-           avgTimeOnPage = timeOnPage_sum/(pageViews_sum - exits_sum)) %>% 
-    mutate(exitRate = exits_sum/pageViews_sum,
-           entranceRate = entrances_sum/pageViews_sum,
            avgTimeOnPage = timeOnPage_sum/(pageViews_sum - exits_sum))
   
   wqwatch_plot <- panel_ga_plot(path_df_human_names, title = "Water Quality Watch page groups",
