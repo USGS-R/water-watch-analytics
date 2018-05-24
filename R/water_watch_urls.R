@@ -1,31 +1,35 @@
 library(dplyr)
 library(googlesheets)
 library(ggplot2)
+library(cowplot)
 analyze_wqwatch_urls <- function(path_df){
   config <- yaml::read_yaml('config.yaml')
   #only main map and state views for WQWatch
   path_df_no_string <- path_df %>% filter(grepl(pattern = "wqwatch", x = pagePath, 
                                                 ignore.case = TRUE)) %>% 
     mutate(path_no_query = tolower(gsub(x = pagePath, pattern = "\\?.*", 
-                                        replacement = ""))) %>% 
-    group_by(path_no_query) %>% summarize(uniquePageviews = sum(uniquePageviews)) %>% 
-    arrange(desc(uniquePageviews))
+                                        replacement = "")))  
   
-  #join on human names
   plot_human_names <- gs_read_csv(ss = gs_title("Watches url mapping"), ws = "WQW")
   #join on human readable names
   path_df_human_names <- left_join(path_df_no_string, plot_human_names, 
                                    by = c(path_no_query = "pagePath minus query string")) %>% 
     mutate(contents = ifelse(is.na(contents), yes = "Everything else", no = contents),
-           cateogry = ifelse(is.na(contents), yes = "Other", no = category))
-  pull_date <- attr(path_df, "dataPullDate")
-  wqwatch_plot <- ggplot(path_df_human_names, aes(x = reorder(contents, -uniquePageviews), y = uniquePageviews))+
-    geom_col(fill = config$palette$wqw) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique Page Views") + 
-    scale_y_continuous(labels = format_si()) +
-    ggtitle('WaterQualityWatch page groups', 
-            subtitle = paste(pull_date - 365, "through", pull_date))
-  ggsave(filename = "wqwatch_paths.png")
+           category = ifelse(is.na(category), yes = "Other", no = category)) %>% 
+    group_by(contents, category) %>% summarize_at(vars(uniquePageviews, pageViews, exits, entrances,
+                                                       timeOnPage), funs(sum=sum)) %>% 
+    arrange(desc(uniquePageviews_sum)) %>% 
+    mutate(exitRate = exits_sum/pageViews_sum,
+           entranceRate = entrances_sum/pageViews_sum,
+           avgTimeOnPage = timeOnPage_sum/(pageViews_sum - exits_sum)) %>% 
+    mutate(exitRate = exits_sum/pageViews_sum,
+           entranceRate = entrances_sum/pageViews_sum,
+           avgTimeOnPage = timeOnPage_sum/(pageViews_sum - exits_sum))
+  
+  wqwatch_plot <- panel_ga_plot(path_df_human_names, title = "Water Quality Watch page groups",
+                                pull_date = attr(path_df, "dataPullDate"), 
+                                filename = "wqwatch_paths.png", bar_col = config$palette$wqw)
+  
   invisible(list(path_df_human_names, wqwatch_plot))
 }
 
@@ -75,36 +79,10 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
            entranceRate = entrances_sum/pageViews_sum,
            avgTimeOnPage = timeOnPage_sum/(pageViews_sum - exits_sum)) %>% 
     arrange(desc(uniquePageviews_sum))
-  pull_date <- attr(path_df, "dataPullDate")
-  wwatch_plot_views <- ggplotGrob(ggplot(path_df_human, aes(x = contents, y = uniquePageviews_sum))+
-    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(x = "Page group", y = "Summed unique\npage views") + scale_y_continuous(labels=format_si()) +
-    labs(caption = "* May be an underestimate")) 
-  
-  wwatch_plot_exit <- ggplotGrob(ggplot(path_df_human, aes(x = contents, y = exitRate))+
-    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(y = "Exit rate") +
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank()))
-  
-  wwatch_plot_entrance <- ggplotGrob(ggplot(path_df_human, aes(x = contents, y = entranceRate))+
-    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(y = "Entrance rate") +
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank()))
-  
-  wwatch_plot_time <-  ggplotGrob(ggplot(path_df_human, aes(x = contents, y = avgTimeOnPage))+
-    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(y = "Mean time\non page (s)") +
-    ggtitle('WaterWatch page groups', 
-            subtitle = paste(pull_date - 365, "through", pull_date))  + 
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank()))
-    
-  all_plot_grob <- rbind(wwatch_plot_time, wwatch_plot_entrance, wwatch_plot_exit, wwatch_plot_views, size = 'first')
-  
-  all_plot_grob$widths <- grid::unit.pmax(wwatch_plot_time$widths, wwatch_plot_entrance$widths, 
-                                          wwatch_plot_exit$widths, wwatch_plot_views$widths)
-  ggsave(filename = "wwatch_paths.png", plot = all_plot_grob, height = 8)
-  
-  invisible(list(path_df_human, all_plot_grob))
+  ww_plot <- panel_ga_plot(path_df_human, title = "WaterWatch page groups",
+                            pull_date = attr(path_df, "dataPullDate"), 
+                            filename = "wwatch_paths.png", bar_col = config$palette$ww)
+  invisible(list(path_df_human, ww_plot))
 }
 
 mutate_grep_query_param <- function(df, name, query_param) {

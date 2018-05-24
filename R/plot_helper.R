@@ -35,3 +35,36 @@ format_si <- function(...) {
           prefix[i])
   }
 }
+
+#4-panel plot of pageviews, entrance rate, exit rate, time on page for diff
+#groups
+panel_ga_plot <- function(path_df_human, title, pull_date, 
+                          filename, bar_col, nwis_caption = FALSE) {
+  plot_views <- ggplot(path_df_human, aes(x = contents, y = uniquePageviews_sum))+
+    geom_col(fill = bar_col) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "Page group", y = "Summed unique\npage views") + scale_y_continuous(labels=format_si()) 
+  if(nwis_caption) {
+    wwatch_plot_views <- wwatch_plot_views + labs(caption = "* May be an underestimate")
+  }  
+    
+  plot_exit <- ggplot(path_df_human, aes(x = contents, y = exitRate))+
+    geom_col(fill = bar_col)  + labs(y = "Exit rate") +
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+  
+  plot_entrance <- ggplot(path_df_human, aes(x = contents, y = entranceRate))+
+    geom_col(fill = bar_col) + labs(y = "Entrance rate") +
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+  
+  plot_time <-  ggplot(path_df_human, aes(x = contents, y = avgTimeOnPage))+
+    geom_col(fill = bar_col) + labs(y = "Mean time\non page (s)") +
+    ggtitle(title, subtitle = paste(pull_date - 365, "through", pull_date))  + 
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+  
+  all_plots <- plot_grid(plot_time, plot_entrance, plot_exit, 
+                         plot_views, rel_heights = c(1,1,1,2.5),
+                         ncol = 1, align = "v")
+  png(filename = filename, height = 9, units = "in", res = 200, width = 6)
+  print(all_plots)
+  dev.off()
+  return(all_plots)
+}
