@@ -133,3 +133,25 @@ all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
   ggsave(filename = "all_watches_categories.png")
   return(watch_cat_plot)
 }
+
+pages_per_sesion <- function(start = (Sys.Date() - 365), end = Sys.Date()){
+  config <- yaml::read_yaml('config.yaml')
+  wwatch_view <- config$ga_views$wwatch
+  gwwatch_view <- config$ga_views$gwwatch
+  date_vec <- c(start = start, end = end)
+  wq_seg <- readRDS('wqwatch_segment.rds')
+  no_wq_seg <- readRDS('no_wqwatch_segment.rds')
+  gw_watch_data <- google_analytics(viewId = gwwatch_view, date_range = date_vec,
+                                    metrics = "pageviewsPerSession", max = -1, 
+                                    anti_sample = TRUE) %>% mutate(watch = "gw")
+  wq_seg_data <- google_analytics(viewId = wwatch_view, date_range = date_vec,
+                                  metrics = "pageviewsPerSession", max = -1, 
+                                  segments = wqwatch_segment, anti_sample = TRUE) %>% 
+    mutate(watch="wq")
+  no_wq_seg_data <- google_analytics(viewId = wwatch_view, date_range = date_vec,
+                                     metrics = "pageviewsPerSession", max = -1, 
+                                     segments = no_wqwatch_segment, anti_sample = TRUE) %>% 
+    mutate(watch="ww")
+  all_data <- bind_rows(gw_watch_data, wq_seg_data, no_wq_seg_data)
+  return(all_data)
+}
