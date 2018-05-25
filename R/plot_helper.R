@@ -58,7 +58,8 @@ panel_ga_plot <- function(path_df_human, title, pull_date,
   plot_time <-  ggplot(path_df_human, aes(x = contents, y = avgTimeOnPage))+
     geom_col(fill = bar_col) + labs(y = "Mean time\non page (s)") +
     ggtitle(title, subtitle = paste(pull_date - 365, "through", pull_date))  + 
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+          plot.subtitle=element_text(hjust = 0.5))
   
   all_plots <- plot_grid(plot_time, plot_entrance, plot_exit, 
                          plot_views, rel_heights = c(1,1,1,3),

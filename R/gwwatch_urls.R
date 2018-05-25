@@ -1,5 +1,6 @@
 library(googlesheets)
 library(dplyr)
+library(cowplot)
 analyze_gww_urls <- function(path_df){
   config <- yaml::read_yaml('config.yaml')
   #get the rest of the path before query string

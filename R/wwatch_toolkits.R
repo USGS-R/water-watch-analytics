@@ -1,6 +1,7 @@
 library(googlesheets)
 library(ggplot2)
 library(dplyr)
+library(cowplot)
 
 ww_toolkit_plot <- function() {
   config <- yaml::read_yaml('config.yaml')

@@ -4,6 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(zoo)
+library(cowplot)
 
 total_sessions_users_plot <- function() {
   source('R/plot_helper.R')
@@ -54,8 +55,6 @@ total_sessions_users_plot <- function() {
                                       dimensions = c("year","month", "networkDomain"),
                                       metrics = c("sessions", "users"), max = -1, 
                                       anti_sample = TRUE)
-    # gw_watch_domain <- gw_watch_data %>% mutate(internal = ifelse(test = networkDomain == "usgs.gov",
-    #                                                              yes = "Internal", no = "External"))
     gw_watch_data_segment <- gw_watch_data %>% mutate(segment = "gwwatch") %>% filter(sessions > 0)
     
     all_watch_data <- bind_rows(no_wq_seg_data, wq_seg_data, gw_watch_data_segment) %>% 
@@ -65,15 +64,18 @@ total_sessions_users_plot <- function() {
       mutate(yearmon = zoo::as.yearmon(paste(year, month, sep = "-")), 
               segment_factor = segment,
               segment_factor = gsub(pattern = "gwwatch", replacement = "GW Watch", x= segment_factor),
-              segment_factor = gsub(pattern = "no_wqwatch", replacement = "WaterWatch (no WQ)", x= segment_factor),
+              segment_factor = gsub(pattern = "no_wqwatch", replacement = "WaterWatch", x= segment_factor),
               segment_factor = gsub(pattern = "wqwatch", replacement = "WQ Watch", x= segment_factor)) %>% 
       mutate(segment_factor =  factor(segment_factor, levels = c("WQ Watch", "GW Watch", 
-                                                          "WaterWatch (no WQ)"))) %>%
+                                                          "WaterWatch"))) %>%
       arrange(segment_factor)
     saveRDS(object = all_watch_data, file = out_file)
     saveRDS(object = wqwatch_segment, file = "wqwatch_segment.rds")
     saveRDS(object = no_wqwatch_segment, file = "no_wqwatch_segment.rds")
   }
+  #exclude first gwwatch point, since it isn't a full month
+  gw_first_day <- filter(all_watch_data, segment == "gwwatch", year == "2013", month == "09")
+  all_watch_data <- anti_join(all_watch_data, gw_first_day)
   all_watch_data_internal <- filter(all_watch_data, internal == "Internal")
   all_watch_data_external <- filter(all_watch_data, internal == "External")
   sessions_plot <- ggplot(data=all_watch_data_external,
@@ -93,15 +95,14 @@ total_sessions_users_plot <- function() {
     theme(legend.position = c(0.8, 0.8)) 
   ggsave(filename = "sessions_internal.png", plot = sessions_plot_int)
   
-  #no_ww_data <- all_watch_data %>% filter(segment != "WaterWatch (no WQ)")
-  # sessions_no_ww_plot <- ggplot(data=no_ww_data,
-  #                         aes(x=yearmon, y=sessions, colour=segment_factor)) +
-  #   geom_line() + scale_y_continuous(labels = scales::comma,
-  #                                    minor_breaks = seq(from = 0, to = 250000, by = 10000)) + 
-  #   labs(x = "Date", y = "Sessions", color= "Watch") + 
-  #   ggtitle('Monthly Session Counts', subtitle = paste("Through", last_month))  +
-  #   theme(legend.position = c(0.8, 0.8)) + scale_y_continuous(labels = format_si())
-  # ggsave(filename = "sessions_no_ww.png", plot = sessions_no_ww_plot)
+  no_ww_data <- all_watch_data %>% filter(segment != "no_wqwatch" & internal == "External") 
+  sessions_no_ww_plot <- ggplot(data=no_ww_data,
+                          aes(x=yearmon, y=sessions, colour=segment_factor)) +
+    geom_line() + scale_y_continuous(labels = format_si()) + 
+    labs(x = "Date", y = "Sessions", color= "Watch") +
+    ggtitle('Monthly External Session Counts', subtitle = paste("Through", last_month))  +
+    theme(legend.position = c(0.1, 0.8)) + scale_y_continuous(labels = format_si())
+  ggsave(filename = "sessions_no_ww.png", plot = sessions_no_ww_plot)
   
   users_plot <- ggplot(data=all_watch_data_external,
                        aes(x=yearmon, y=users, colour=segment_factor)) +
@@ -113,7 +114,7 @@ total_sessions_users_plot <- function() {
   ggsave(filename = 'users.png', plot = users_plot)
   
   
-  return(list(sessions_plot, sessions_plot_int,users_plot))
+  return(list(sessions_plot, sessions_plot_int,users_plot, sessions_no_ww_plot))
 }
 
 all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
@@ -121,7 +122,11 @@ all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
   all_watch_categories <- bind_rows(gwwatch_urls, wwatch_urls, wqwatch_urls) %>% 
     #removing some categories that aren't data views 
     filter(category != "REMOVE")  %>% group_by(category, watch) %>% 
-    summarize(uniquePageviews = sum(uniquePageviews))
+    summarize(uniquePageviews = sum(uniquePageviews_sum)) %>% 
+    mutate(watch =  factor(watch, levels = c("WaterQualityWatch", 
+                                                                 "GroundwaterWatch",
+                                                                 "WaterWatch"))) %>%
+    arrange(watch)
   
   watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePageviews))+
     geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
