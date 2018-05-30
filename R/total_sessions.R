@@ -74,7 +74,7 @@ total_sessions_users_plot <- function() {
     saveRDS(object = no_wqwatch_segment, file = "no_wqwatch_segment.rds")
   }
   #exclude first gwwatch point, since it isn't a full month
-  gw_first_day <- filter(all_watch_data, segment == "gwwatch", year == "2013", month == "09")
+  gw_first_day <- filter(all_watch_data, segment == "gwwatch", year == "2016", month == "03")
   all_watch_data <- anti_join(all_watch_data, gw_first_day)
   all_watch_data_internal <- filter(all_watch_data, internal == "Internal")
   all_watch_data_external <- filter(all_watch_data, internal == "External")
@@ -84,7 +84,7 @@ total_sessions_users_plot <- function() {
                                      minor_breaks = seq(from = 0, to = 250000, by = 10000)) + 
     labs(x = "Date", y = "Sessions", color= "Watch") + 
     ggtitle('Monthly External Session Counts', subtitle = paste("Through", last_month))  +
-    theme(legend.position = c(0.8, 0.8)) 
+    theme(legend.position = c(0.6, 0.8), legend.title = element_blank()) 
   ggsave(filename = "sessions.png", plot = sessions_plot)
   
   sessions_plot_int <- ggplot(data=all_watch_data_internal,
@@ -92,16 +92,20 @@ total_sessions_users_plot <- function() {
     geom_line() + scale_y_continuous(labels = format_si()) +
     labs(x = "Date", y = "Sessions", color= "Watch") + 
     ggtitle('Monthly Internal Session Counts', subtitle = paste("Through", last_month))  +
-    theme(legend.position = c(0.8, 0.8)) 
+    theme(legend.position = c(0.6, 0.8), legend.title = element_blank()) 
   ggsave(filename = "sessions_internal.png", plot = sessions_plot_int)
   
   no_ww_data <- all_watch_data %>% filter(segment != "no_wqwatch" & internal == "External") 
   sessions_no_ww_plot <- ggplot(data=no_ww_data,
                           aes(x=yearmon, y=sessions, colour=segment_factor)) +
     geom_line() + scale_y_continuous(labels = format_si()) + 
+    scale_x_continuous(minor_breaks = c(2016.5, 2017.5),
+                       breaks = c(2017, 2018)) +
     labs(x = "Date", y = "Sessions", color= "Watch") +
     ggtitle('Monthly External Session Counts', subtitle = paste("Through", last_month))  +
-    theme(legend.position = c(0.1, 0.8)) + scale_y_continuous(labels = format_si())
+    theme(legend.position = c(0.08, 0.15), legend.title = element_blank()) + 
+    scale_y_continuous(labels = format_si()) + scale_color_manual(values = c("WQ Watch"="#f8766d",
+                                                                            "GW Watch"="#00ba38"))
   ggsave(filename = "sessions_no_ww.png", plot = sessions_no_ww_plot)
   
   users_plot <- ggplot(data=all_watch_data_external,
@@ -110,7 +114,7 @@ total_sessions_users_plot <- function() {
                                      minor_breaks = seq(from = 0, to = 200000, by = 5000)) + 
     labs(x = "Date", y = "Users", color= "Watch") + 
     ggtitle('Monthly External User Counts', subtitle = paste("Through", last_month)) + 
-    theme(legend.position = c(0.8, 0.8)) 
+    theme(legend.position = c(0.6, 0.8), legend.title = element_blank()) 
   ggsave(filename = 'users.png', plot = users_plot)
   
   
@@ -119,6 +123,7 @@ total_sessions_users_plot <- function() {
 
 all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
   #overall category plot
+  cfg <- yaml::read_yaml('config.yaml')
   all_watch_categories <- bind_rows(gwwatch_urls, wwatch_urls, wqwatch_urls) %>% 
     #removing some categories that aren't data views 
     filter(category != "REMOVE")  %>% group_by(category, watch) %>% 
@@ -129,12 +134,17 @@ all_watch_plot <- function(gwwatch_urls, wwatch_urls, wqwatch_urls,  pullDate) {
     arrange(watch)
   
   watch_cat_plot <- ggplot(all_watch_categories, aes(x = category, y = uniquePageviews))+
-    geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_col(aes(fill = watch)) + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                                        legend.title = element_blank(),
+                                        plot.subtitle = element_text(hjust = 0.5)) +
     labs(x = "Page Category", y = "Summed unique page views of category pages") + 
     scale_y_continuous(labels=format_si()) + 
     scale_x_discrete(limits = c("Site", "State", "National", "Other")) +
     ggtitle("Page categories across all watches",
-            subtitle = paste(pullDate - 365, "through", pullDate))
+            subtitle = paste(pullDate - 365, "through", pullDate)) +
+    scale_fill_manual(values = c("WaterQualityWatch" = cfg$palette$wqw, 
+                                 "GroundwaterWatch"  = cfg$palette$gww, 
+                                 "WaterWatch" = cfg$palette$ww))
   ggsave(filename = "all_watches_categories.png")
   return(watch_cat_plot)
 }

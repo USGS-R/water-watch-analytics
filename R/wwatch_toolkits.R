@@ -18,10 +18,11 @@ ww_toolkit_plot <- function() {
   
   toolkit_pages <- left_join(wwatch_pages, toolkit_query_strings, 
                              by = c(pagePath = "query_string_id")) %>% 
-    group_by(toolkit_name) %>% summarize(uniquePageviews = sum(uniquePageviews)) %>% 
+    group_by(toolkit_name, ) %>% summarize(uniquePageviews = sum(uniquePageviews)) %>% 
     filter(!is.na(toolkit_name)) %>% arrange(desc(uniquePageviews))
   toolkit_plot <- ggplot(toolkit_pages, aes(x = reorder(toolkit_name, -uniquePageviews), y = uniquePageviews))+
-    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_col(fill = config$palette$ww) + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                                               plot.subtitle = element_text(hjust = 0.5)) +
     labs(x = "Toolkit name", y = "Summed unique page views\nof toolkit home page") + scale_y_continuous(labels=scales::comma) +
     ggtitle("Unique page views of toolkit main pages", 
             subtitle = paste(pull_date - 365, "through", pull_date))

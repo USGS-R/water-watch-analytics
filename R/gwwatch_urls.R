@@ -47,7 +47,8 @@ gwwatch_networks <- function(path_df) {
     mutate(network = ifelse(is.na(network), yes = "Other", no = network))
   pull_date <- attr(path_df, "dataPullDate")
   gwwatch_nets_plot <- ggplot(path_df_ncd_st_aq, aes(x = reorder(network, -uniquePageviews), y = uniquePageviews))+
-    geom_col(fill = config$palette$gww) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_col(fill = config$palette$gww) + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                                                plot.subtitle = element_text(hjust = 0.5)) +
     labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=format_si()) +
     ggtitle('GroundwaterWatch network views',
             subtitle = paste(pull_date - 365, "through", pull_date))

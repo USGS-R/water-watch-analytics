@@ -64,7 +64,7 @@ analyze_wwatch_urls <- function(path_df, nwis_df) {
   
   #add in nwis site page traffic from waterwatch
   nwis_df <- nwis_df %>% filter(source == "waterwatch.usgs.gov") 
-  nwis_row <- tibble(contents = "NWIS web site page \nreferred from WaterWatch*", 
+  nwis_row <- tibble(contents = "NWIS web site page \nreferred from WaterWatch", 
                      uniquePageviews_sum = sum(nwis_df$uniquePageviews),
                      pageViews_sum = sum(nwis_df$pageViews),
                      exits_sum = sum(nwis_df$exits),
@@ -116,7 +116,8 @@ wwatch_networks <- function(path_df, ws, plot_file) {
                                                                                                   yes = "Other",
                                                                                                   no = network))
   wwatch_nets_plot <- ggplot(networks_df, aes(x = reorder(network, -uniquePageviews), y = uniquePageviews))+
-    geom_col(fill = bar_fill) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_col(fill = bar_fill) + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                                      plot.subtitle = element_text(hjust = 0.5)) +
     labs(x = "Network", y = "Summed unique page views") + scale_y_continuous(labels=format_si()) +
     ggtitle(title, subtitle = paste(pull_date - 365, "through", pull_date))
   ggsave(filename = plot_file)
