@@ -8,64 +8,84 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
-This report begins to examine the usage of different parts of the [Water Watch](waterwatch.usgs.gov) and [Groundwater Watch](groundwaterwatch.usgs.gov) web sites. While it focuses on just aggregate total traffic to get an initial picture, there are many more-granular ways to analyze this data.   
+### Executive Summary
 
-### First, a word on the data 
-The data we used here was pulled from the Google Analytics (GA) API.  Records extend from before 2010 for Water Watch, before 2014 for Groundwater Watch, and 2017 for Water Quality Watch.  All three sites have a basic Google Analytics implementation that records when pages are viewed, and a wide range of information about users, but nothing about how the users interact with the site beyond time spend on a page. We can tell where users went and for how long, but we don't know what they did there. 
+ * Traffic to WaterWatch dwarfs WQ Watch and Groundwater Watch, but is trending downwards since 2013
+ * Across all three Watches state/regional views and site pages recieve by far the most traffic
+ * State and local data presentation should be a focus of future development efforts
 
-We use three metrics drawn from the GA data:
+### Introduction
+
+This report begins to examine the usage of different parts of the [Water Watch](waterwatch.usgs.gov), [Water Quality Watch](https://waterwatch.usgs.gov/wqwatch/) and [Groundwater Watch](groundwaterwatch.usgs.gov) web sites, in the interest of determining the most used parts of these sites, and getting a basic understanding of how users navigate through them.  We focus on some broad quantitative metrics across different page groups. This is only the _quantitative_ side of assessing a page's value.  It should be noted that while we can likely assume that high traffic parts of a web site are valuable to it's user base, not all valuable parts of a site may have high traffic.  Certain low-traffic features may have been requested and used by important stakeholders for instance, which is not reflected in metrics like session counts.  Quantitative and qualitative information together should guide future web development efforts, by concentrating efforts on the most valuable portions of an application. 
+
+### Methods 
+The data we used here was pulled from the Google Analytics (GA) API.  Records extend from 2009 for Water Watch, before 2016 for Groundwater Watch, and 2017 for Water Quality Watch.  Water Quality Watch came online in 2009, and the modern Groundwater Watch in 2004, so much of the record for them mising.  All three sites have a basic Google Analytics implementation that records when pages are viewed, and a wide range of information about users, but nothing about how the users interact with the site beyond time spend on a page. We can tell where users went and for how long, but we don't know what they did there. 
+
+We use these metrics drawn from the GA data:
 
 * __sessions__: Visits to a web site, by new or returning users
 * __users__: An approximation of the number of unique users on a site, based on a cookie stored in the user's browser.  This metric is some degree of an overestimate, since it one person visiting on multiple devices or browsers will appear as different users.
-* __unique page views__: A session viewing a single web page at least once; if a person views a page multiple times during the same session, it is only counted once.
+* __unique pageviews__: A session viewing a single web page at least once; if a person views a page multiple times during the same session, it is only counted once.
+* __exits__: The last page visited in a session.
+* __entrances__: The first page visited in a session.
+* __time on page__: The time between a user opening a page and a previous page.  It cannot be calculated for exit pages.
 
 Google's definitions of these and other GA terms can be found in their [dimensions and metrics explorer](https://developers.google.com/analytics/devguides/reporting/core/dimsmets).
 
-### How these plots were made
+Internal traffic is based on a visitor's network domain name.  We can distinguish users on the USGS network from others.  However, we can't distinguish USGS staff on other networks, e.g. someone using a Mifi.  
+
 The long-term traffic plots are simple monthly totals.
 
-For the page-level views that follow, we pulled unique page views for every unique URL visited on each site in the last year*. We used the URLs to infer page content, based on mappings in [this spreadsheet](https://docs.google.com/spreadsheets/d/14OLEuUkdrxc3m65UZcS9VxPj5QOx6NKhvvEWcKJgnuo/edit#gid=0), which may be imperfect (some pages can be reached by more than one unique query strings).  For completeness, every plot includes an "Everything else" or "Other" category, which includes all URLs that we didn't categorize in our analysis.
+For the page-level views that follow, we pulled unique pageviews, pageviews, exits, entrances, and time on page for every unique URL visited on each site in the last year*. We used the URLs to infer page content, based on mappings in [this spreadsheet](https://docs.google.com/spreadsheets/d/14OLEuUkdrxc3m65UZcS9VxPj5QOx6NKhvvEWcKJgnuo/edit#gid=0), which may be imperfect (some pages can be reached by more than one unique query strings).  For completeness, every plot includes an "Everything else" or "Other" category, which includes all URLs that we didn't categorize in our analysis.  Exit rates, entrance rates, and average time on page were calculated for after grouping the pages and summing pageviews, exits, and entrances.
 
-We summed the unique page views for all pages that we grouped together.  This means that while a single unique page is only counted once, there may be many pages in a group (e.g., site pages on groundwater watch) viewed during a single session by the same person, all of which would be counted.  This could bias unique page view sums higher for larger groups of pages (e.g., site pages vs. a national map view).
+We summed the unique pageviews for all pages that we grouped together.  This means that while a single unique page is only counted once, there may be many pages in a group (e.g., site pages on groundwater watch) viewed during a single session by the same person, all of which would be counted.  This could bias unique pageview sums higher for larger groups of pages (e.g., site pages vs. a national map view).
 
 For "popular page groups" plots, the groups were hand-curated based on individual URLs with the most traffic that corresponded to obvious parts of the sites. The networks in the "network-view" plots are more conceptually driven.     
 
-Code can be found [here](https://github.com/USGS-R/water-watch-analytics).
+Code for all analysis can be found [here](https://github.com/USGS-R/water-watch-analytics).
 
 *_WaterWatch and NWIS web both show strong seasonal trends in usage, so shorter analysis periods should be used with caution._
 
-Now to the actual data:
-
 ### Total long-term traffic
-```{r overall_traffic}
+```{r overall_traffic, fig.height=7, fig.width=7.5}
 library(zeallot)
 source('R/total_sessions.R')
-c(sessions_plot, users_plot) %<-% total_sessions_users_plot()
-sessions_plot
-users_plot
+c(sessions_plot, sessions_plot_int, users_plot, no_ww_plot) %<-% total_sessions_users_plot()
+plot_grid(sessions_plot, no_ww_plot, sessions_plot_int, users_plot, ncol = 2, align = "v",labels = c("a.", "b.", "c.", "d."), label_x = 0.1)
 ```
 
 _Figure 1: Monthly session and user counts_  
-Water Watch dominates Groundwater Watch and Water Quality Watch in total traffic.  There appears to be a downward trend in Water Watch traffic since 2013, although note we are just entering peak use season for 2018.  
-```{r ww_pages}
+
+Water Watch dominates Groundwater Watch and Water Quality Watch in total traffic (Fig. 1a). The difference is largely from external traffic --- while Water Watch is still the most visited by internal network traffic, the difference is much smaller (Fig 1c).  There is a downward trend in Water Watch traffic since 2013, although note we are just entering peak use season for 2018. This trend is visible in both the external and internal session counts.    
+
+Water Quality Watch and Groundwater Watch external session counts appear generally flat, although there are only records for a fraction of the time these sites have existed.  Internal session counts appear to be slowly decreasing on all three sites.    
+
+### Water Watch
+
+```{r ww_pages, fig.height=9}
 source('R/water_watch_urls.R')
 source('R/plot_helper.R')
 
 all_watch_pages <- readRDS('all_pages.rds')
 c(wwatch_urls, ww_plot) %<-% analyze_wwatch_urls(path_df = all_watch_pages$all_raw$wwatch, 
                                    nwis_df = all_watch_pages$all_raw$nwis)
-ww_plot
+grid::grid.draw(ww_plot)
 ```
 
 _Figure 2: Popular page groups on waterwatch.usgs.gov_    
-State and region real-time historical percentile maps are by far the most category.  Water watch links out to NWIS web site pages from its maps, so NWIS site page traffic referred from Water Watch is included here.  Note that this may be an underestimate --- GA is not always able to tell where a visit originated from.  Tagging links with [UTM parameters](https://www.lunametrics.com/blog/2017/09/19/campaign-links-in-google-analytics/) can make this number more concrete.
+
+State and region real-time historical percentile maps are by far the most category.  Water watch links out to NWIS web site pages from its maps, so NWIS web site page traffic referred from Water Watch is included here. Note that users can also view the a gage summary, hyrographs, and other information from a diagog on the WaterWatch maps, without actually visiting NWIS web.  Server logs or custom GA events would be required to record when viewers open the dialogs.
+
+State and region maps also stand out in exit rate, entrance rate, and mean time on page.  The entrane rate on these pages is nearly equal to the home page.  Combined with the high number of page views, we can say that state and region maps represent the largest group of entrances and exits on Water Watch.  
 
 
 ```{r ww_nets}
 c(., ww_net_plot) %<-% wwatch_networks(path_df = all_watch_pages$all_raw$wwatch, ws = "ww_networks", plot_file = "wwatch_networks.png")
 ww_net_plot
 ```
+
 _Figure 3: Water Watch network view traffic_  
+
 Current streamflow maps are by far the most popular network view. 
 
 ```{r ww_toolkits}
@@ -73,51 +93,89 @@ source('R/wwatch_toolkits.R')
 toolkit_plot <- ww_toolkit_plot()
 toolkit_plot
 ```
+
 _Figure 4: Water Watch toolkit traffic_   
 
-The toolkits receive orders of magnitude less traffic than other parts of the site. This plot only counts the "home page" for each toolbox, to control for URL modifications that happen when the toolboxes are used.  This would be a good area to examine the percentage of USGS network traffic.
+The toolkits receive orders of magnitude less traffic than other parts of the site. This plot only counts the "home page" for each toolbox, to control for URL modifications that happen when the toolboxes are used.  The toolkit overview page has descriptions of each toolbox.  The rating curve toolbox has the most views of the individual toolboxes.  
 
+### Water Quality Watch
 
-```{r wq_pages}
+```{r wq_pages, fig.height=9}
 c(wqwatch_urls, wq_pages_plot) %<-% analyze_wqwatch_urls(all_watch_pages$all_raw$wqwatch)
 wq_pages_plot
 ```
+
 _Figure 5: Water Quality Watch popular page groups_  
-State maps are the most popular, somewhat moreso than the national map.  
+
+Like Water Watch, state maps are the most popular, somewhat moreso than the national map.  Exit and entrance rates and time on page are highest in the FAQ and "Everything else" category, both of which have a very small number of page views.  Excluding those groups, the national map on the main page has the highest entrance rate, but in time on page and exit rate little stands out.   
 
 ```{r wq_networks}
 c(., wq_net_plot) %<-% wwatch_networks(all_watch_pages$all_raw$wqwatch, ws = "wqw_networks", plot_file = "wq_networks.png")
 wq_net_plot
 ```
-_Figure 6: Water Quality Watch networks_
+
+_Figure 6: Water Quality Watch networks_  
+
 The Water Quality Watch networks are all parameter-based.  Note that temperature is the default parameter, so it would be expected to be much higher. It would be difficult to separate out traffic that only view temperature on the way to another parameter. Traffic to the other parameters does not appear to be related to their menu position relative to temperature --- nitrate, the second most popular parameter, is in the middle of the menu. 
 
-```{r gw_pages}
+### Groundwater Watch
+
+```{r gw_pages, fig.height=9}
 source('R/gwwatch_urls.R')
 c(gwwatch_urls, gw_pages_plot) %<-% analyze_gww_urls(all_watch_pages$all_raw$gwwatch)
 gw_pages_plot
 ```
+
 _Figure 7: Popular Groundwater Watch page groups_  
-Groundwater Watch site pages receive by far the most traffic, followed by the landing page (which links to multiple national views), and state and national views.
+
+Groundwater Watch site pages receive by far the most traffic, followed by the landing page (which links to multiple national views), and state and national views.  There is not a great deal of variation in exit rate, although it generally more page views corresponds to a higher exit rate.  Entrance rate is dominated by the landing page.  Time on page is dominated by the site pages.  
 
 ```{r gw_networks}
 c(., gw_net_plot) %<-% gwwatch_networks(all_watch_pages$all_raw$gwwatch)
 gw_net_plot
 ```
+
 _Figure 8: Groundwater Watch networks_  
+
 The "active" network (any measurements in the last 13 months) is by far the most popular network.  The large "Other" group largely consists of the landing page and county-level leaflet maps, which weren't categorized.
   
 ```{r combined_categories}
   #need to add column first
 source('R/total_sessions.R')
-  wwatch_urls <- wwatch_urls %>% mutate(watch = "WaterWatch")
-  gwwatch_urls <- gwwatch_urls %>% mutate(watch = "GroundwaterWatch")
-  wqwatch_urls <- wqwatch_urls %>% mutate(watch = "WaterQualityWatch")
-  all_cat_plot <- all_watch_plot(gwwatch_urls, wwatch_urls, wqwatch_urls, pullDate = attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
-  all_cat_plot
+wwatch_urls <- wwatch_urls %>% mutate(watch = "WaterWatch")
+gwwatch_urls <- gwwatch_urls %>% mutate(watch = "GroundwaterWatch")
+wqwatch_urls <- wqwatch_urls %>% mutate(watch = "WaterQualityWatch")
+wwatch_date <- attr(all_watch_pages$all_raw$wwatch, "dataPullDate")
+gwwatch_date <- attr(all_watch_pages$all_raw$gwwatch, "dataPullDate")
+wq_date <- attr(all_watch_pages$all_raw$wqwatch, "dataPullDate")
+check <- assertthat::assert_that( wwatch_date == wq_date && wwatch_date == gwwatch_date) 
+all_cat_plot <- all_watch_plot(gwwatch_urls, wwatch_urls, wqwatch_urls, pullDate = wwatch_date)
+all_cat_plot
 ```
 
-Across all three Watches, state and site views are much more popular than national views by the summed unique pageviews metric. 
+_Figure 9: Page categories across all watches_   
 
-## Other dimensions to explore
-We have the data available to explore many other dimensions of web traffic, if there are useful applications for them.  With methods similar to this report, we can look at proportions of USGS network traffic (this report does not distinguish between external and interal traffic), entry and exit pages, popular monitoring sites, geographic origination around certain events, and many others. 
+Fig. 9 sums unique page views for general categories that can be applied to all three sites.  Water Watch dominates this view due to it's much higher traffic levels, but in all three sites lower-level views like state maps or individual site pages are used more than national maps.   
+
+### Discussion
+
+_Traffic Patterns_  
+
+Across all three Watches, state views and site pages are the most heavily traffic pages. On Water Watch, most people enter and exit the site from state and regional maps, and spend the most amount of time on those pages.  The data shown here probably even understates this effect, since on Water Watch and Water Quality Watch we don't know when people view individual site pop-ups with the data used here.  This suggests that future efforts at modernizing and centralizing how the USGS serves the data on these sites should focus on local and site-level presentation.  Customizable views should have a local focus as well.  
+
+Having identified the local focus of much of the Watches traffic, we could also ask if people view data from sites near them, or in their state.  Does this behavior change during disasters like major flooding?  This information could inform future site design, such as a geolocation feature, so a visitor is immediately provided with the view they want.  
+
+_Long-term trends_  
+
+Water Watch external traffic appears to be decreasing over the previous five years.  Water Quality Watch and Groundwater Watch have been more stable.  Internal traffic appears to be decreasing for all three sites, although it the multi-year decline in Water Watch traffic is most pronounced.  USGS network traffic declining could reflect a shift to web service-based data access.  Trends in external traffic are somewhat more positive.  With modernization and increased promotion there is likely growth potential, particularly for Groundwater Watch and Water Quality Watch.  
+
+These aggregate numbers reveal broad trends, but do little to answer what is driving them.  A multi-year analysis of referrals could reveal if the downward trend in Water Watch traffic is due to particular traffic sources or geographic areas, or if it is across the board.  Demographic data would also be useful for defining the current audience, although it would require enabling other features in Google Analytics, or other data sources.  
+
+### Conclusions
+Water Watch, Groundwater Watch, and Water Quality Watch all show that users are most interested in data presented at the site or state/local level.  Additional geographic analysis of traffic could add more nuance to this perspective, to shed light on why visitors use these applications, and further guide future development efforts.  Long term trends in sessions show usage of Water Watch dwards the other two watches, but is decreasing, while Groundwater Watch and Water Quality Watch use is more stable. Trends in traffic from the general public are more positive than traffic from within the USGS network.   
+
+
+
+
+
+

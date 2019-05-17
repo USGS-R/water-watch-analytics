@@ -18,15 +18,15 @@ all_watch_pages <- get_popular_pages(wq_segment = wqwatch_segment,
 gar_auth_service(config$ga_token)
 
 nwis_web <- google_analytics(viewId = config$ga_views$nwisweb_desktop, 
-                             date_range = date_range, metrics = "uniquePageviews",
+                             date_range = date_range, metrics = c("uniquePageviews", "pageViews","entrances", "exits", "timeOnPage"),
                              dimensions = c("source", "pagePath", "deviceCategory"), 
                              max = -1)
 
 nwis_web_filtered <- nwis_web %>% filter(grepl(pattern = "site_no", x = pagePath) &
-                                           grepl(patter="waterwatch", x= source))
+                                           grepl(pattern="waterwatch", x= source))
 attr(nwis_web_filtered, "dataPullDate") <- Sys.Date()
 all_watch_pages$all_raw$nwis <- nwis_web_filtered
-assert_that(attr(nwis_web_filtered, "dataPullDate") == attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
+assertthat::assert_that(attr(nwis_web_filtered, "dataPullDate") == attr(all_watch_pages$all_raw$wwatch, "dataPullDate"))
 saveRDS(all_watch_pages, file = 'all_pages.rds')
 
 #page group breakdowns
